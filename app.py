@@ -17,13 +17,15 @@ from tensorflow.keras.callbacks import EarlyStopping
 from scikeras.wrappers import KerasRegressor
 import pickle
 from math import sqrt
+
 import seaborn as sns
+
 from scipy.stats import pearsonr
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
+
 warnings.simplefilter('ignore', ConvergenceWarning)
 
-# Define your functions here
 
 def corr_with_pvalues(df):
     df = df.dropna()._get_numeric_data()
@@ -246,7 +248,6 @@ def train_models(target_col, dataset):
 
     return results
 
-
 def series_to_supervised(df, n_in=1, dropnan=True):
     n_vars = df.shape[1]
     cols, names = list(), list()
@@ -266,6 +267,7 @@ def series_to_supervised(df, n_in=1, dropnan=True):
     return agg
 
 
+
 # Function to set the sidebar with icons
 def sidebar():
     with st.sidebar:
@@ -277,6 +279,8 @@ def sidebar():
             default_index=0,
         )
     return selected
+
+
 
 # Function to create page layout
 def page_layout(title, subtitle, content):
@@ -308,10 +312,18 @@ def page_layout(title, subtitle, content):
         unsafe_allow_html=True,
     )
 
+
+
 # Main app function
 def main():
     st.set_page_config(page_title="COVID-19 Case Prediction", page_icon="🏡")
+
+    # Call sidebar function
     selected = sidebar()
+
+    # Split dataset into inputs (X) and target (Y)
+
+
 
     # Home Page
     if selected == "🏡 Home":
@@ -329,6 +341,7 @@ def main():
         """
         page_layout(title, subtitle, content)
 
+
     if selected == "📈 Analysis":
         title = "Analysis"
         subtitle = "Correlation and P-Values Matrix"
@@ -343,6 +356,7 @@ def main():
         csv_file_path = "st.csv"
         data_cov = load_data2(csv_file_path)
         covid_data = data_cov.copy()
+
 
         correlation_matrix = covid_data.corr(numeric_only=True)
         pval_matrix = corr_with_pvalues(covid_data)
@@ -365,255 +379,213 @@ def main():
 
         csv_file_path = "st.csv"
         data_cov = pd.read_csv(csv_file_path)
+        
         data_cov.index = data_cov['date']
         data_cov = data_cov[data_cov['location'] == "India"]
 
-        features = ['new_cases', 'new_cases_smoothed', 'new_deaths', 'new_vaccinations']
+        features = ['new_cases', 'new_cases_smoothed','new_deaths','new_vaccinations']
         data_cov = data_cov[features]
 
         # Create lagged dataset
         n_lags = 14
         dataset = series_to_supervised(data_cov, n_in=n_lags)
-        target_col = 'new_cases(t)'
 
-        try:
-            with st.spinner('Training models...'):
-                results = train_models(target_col, dataset)
+        target_col = 'new_cases(t)'
+        results = train_models(target_col, dataset)
 
             # Linear Regression Model Evaluation
-            st.markdown("### Linear Regression Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
-            st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
-            st.write("R2 Score:", results['linear_regression']['r2'])
+        st.markdown("### Linear Regression Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
+        st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
+        st.write("R2 Score:", results['linear_regression']['r2'])
 
-            # Plot Linear Regression Prediction
-            st.markdown("### Linear Regression Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['linear'], label='Linear Model', linestyle='--')
-            plt.xlabel('Date')
-            plt.ylabel('New Cases')
-            plt.title('Linear Regression Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot Linear Regression Prediction
+        st.markdown("### Linear Regression Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['linear'], label='Linear Model', linestyle='--')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('Linear Regression Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # ARIMA Model Evaluation
-            st.markdown("### ARIMA Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
-            st.write("MSE (Mean Squared Error):", results['arima']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
-            st.write("R2 Score:", results['arima']['r2'])
+        # ARIMA Model Evaluation
+        st.markdown("### ARIMA Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
+        st.write("MSE (Mean Squared Error):", results['arima']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
+        st.write("R2 Score:", results['arima']['r2'])
 
-            # Plot ARIMA Prediction
-            st.markdown("### ARIMA Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['arima'], label='ARIMA Model', linestyle='-')
-            plt.xlabel('Date')
-            plt.ylabel('New Cases')
-            plt.title('ARIMA Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot ARIMA Prediction
+        st.markdown("### ARIMA Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['arima'], label='ARIMA Model', linestyle='-')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('ARIMA Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # ANN Model Evaluation
-            st.markdown("### ANN Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
-            st.write("MSE (Mean Squared Error):", results['ann']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
-            st.write("R2 Score:", results['ann']['r2'])
+        # ANN Model Evaluation
+        st.markdown("### ANN Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
+        st.write("MSE (Mean Squared Error):", results['ann']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
+        st.write("R2 Score:", results['ann']['r2'])
 
-            # Plot ANN Prediction
-            st.markdown("### ANN Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['ann'], label='ANN Model', linestyle=':')
-            plt.xlabel('Date')
-            plt.ylabel('New Cases')
-            plt.title('ANN Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot ANN Prediction
+        st.markdown("### ANN Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['ann'], label='ANN Model', linestyle='-.')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('ANN Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # LSTM Model Evaluation
-            st.markdown("### LSTM Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
-            st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
-            st.write("R2 Score:", results['lstm']['r2'])
+        # LSTM Model Evaluation
+        st.markdown("### LSTM Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
+        st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
+        st.write("R2 Score:", results['lstm']['r2'])
 
-            # Plot LSTM Prediction
-            st.markdown("### LSTM Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['lstm'], label='LSTM Model', linestyle='-.')
-            plt.xlabel('Date')
-            plt.ylabel('New Cases')
-            plt.title('LSTM Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot LSTM Prediction
+        st.markdown("### LSTM Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['lstm'], label='LSTM Model', linestyle=':')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('LSTM Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-        except BrokenPipeError:
-            st.error("The connection was lost. Please try again.")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+
 
     elif selected == "💀 New Deaths Modelling (India)":
-        title = "New Deaths Models"
+        title = "New_deaths models"
         subtitle = "Model Comparisons"
 
         csv_file_path = "st.csv"
         data_cov = pd.read_csv(csv_file_path)
+        
         data_cov.index = data_cov['date']
         data_cov = data_cov[data_cov['location'] == "India"]
 
-        features = ['new_deaths', 'new_cases', 'new_deaths_smoothed', 'new_vaccinations']
+        features = ['new_cases', 'new_deaths_smoothed','new_deaths']
         data_cov = data_cov[features]
 
         # Create lagged dataset
         n_lags = 14
         dataset = series_to_supervised(data_cov, n_in=n_lags)
         target_col = 'new_deaths(t)'
-
-        try:
-            with st.spinner('Training models...'):
-                results = train_models(target_col, dataset)
+        results = train_models(target_col, dataset)
 
             # Linear Regression Model Evaluation
-            st.markdown("### Linear Regression Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
-            st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
-            st.write("R2 Score:", results['linear_regression']['r2'])
+        st.markdown("### Linear Regression Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
+        st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
+        st.write("R2 Score:", results['linear_regression']['r2'])
 
-            # Plot Linear Regression Prediction
-            st.markdown("### Linear Regression Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['linear'], label='Linear Model', linestyle='--')
-            plt.xlabel('Date')
-            plt.ylabel('New Deaths')
-            plt.title('Linear Regression Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot Linear Regression Prediction
+        st.markdown("### Linear Regression Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['linear'], label='Linear Model', linestyle='--')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('Linear Regression Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # ARIMA Model Evaluation
-            st.markdown("### ARIMA Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
-            st.write("MSE (Mean Squared Error):", results['arima']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
-            st.write("R2 Score:", results['arima']['r2'])
+        # ARIMA Model Evaluation
+        st.markdown("### ARIMA Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
+        st.write("MSE (Mean Squared Error):", results['arima']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
+        st.write("R2 Score:", results['arima']['r2'])
 
-            # Plot ARIMA Prediction
-            st.markdown("### ARIMA Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['arima'], label='ARIMA Model', linestyle='-')
-            plt.xlabel('Date')
-            plt.ylabel('New Deaths')
-            plt.title('ARIMA Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot ARIMA Prediction
+        st.markdown("### ARIMA Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['arima'], label='ARIMA Model', linestyle='-')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('ARIMA Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # ANN Model Evaluation
-            st.markdown("### ANN Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
-            st.write("MSE (Mean Squared Error):", results['ann']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
-            st.write("R2 Score:", results['ann']['r2'])
+        # ANN Model Evaluation
+        st.markdown("### ANN Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
+        st.write("MSE (Mean Squared Error):", results['ann']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
+        st.write("R2 Score:", results['ann']['r2'])
 
-            # Plot ANN Prediction
-            st.markdown("### ANN Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['ann'], label='ANN Model', linestyle=':')
-            plt.xlabel('Date')
-            plt.ylabel('New Deaths')
-            plt.title('ANN Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot ANN Prediction
+        st.markdown("### ANN Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['ann'], label='ANN Model', linestyle='-.')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('ANN Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-            # LSTM Model Evaluation
-            st.markdown("### LSTM Model Evaluation")
-            st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
-            st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
-            st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
-            st.write("R2 Score:", results['lstm']['r2'])
+        # LSTM Model Evaluation
+        st.markdown("### LSTM Model Evaluation")
+        st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
+        st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
+        st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
+        st.write("R2 Score:", results['lstm']['r2'])
 
-            # Plot LSTM Prediction
-            st.markdown("### LSTM Model Prediction")
-            plt.figure(figsize=(14, 8))
-            plt.plot(results['predictions']['actual'], label='Actual test')
-            plt.plot(results['predictions']['lstm'], label='LSTM Model', linestyle='-.')
-            plt.xlabel('Date')
-            plt.ylabel('New Deaths')
-            plt.title('LSTM Model Prediction')
-            plt.legend()
-            st.pyplot()
+        # Plot LSTM Prediction
+        st.markdown("### LSTM Model Prediction")
+        plt.figure(figsize=(14, 8))
+        plt.plot(results['predictions']['actual'], label='Actual test')
+        plt.plot(results['predictions']['lstm'], label='LSTM Model', linestyle=':')
+        plt.xlabel('Date')
+        plt.ylabel('New Cases')
+        plt.title('LSTM Model Prediction')
+        plt.legend()
+        st.pyplot()
 
-        except BrokenPipeError:
-            st.error("The connection was lost. Please try again.")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
 
-    elif selected == "🔮 Prediction (Linear regression)":
-        title = "Linear Regression Prediction"
-        subtitle = "Predict COVID-19 cases using Linear Regression"
-        st.title(title)
-        st.subheader(subtitle)
-        st.write("""
-        Upload your data to predict COVID-19 cases using a pre-trained Linear Regression model.
-        """)
-        uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-        if uploaded_file is not None:
-            data = pd.read_csv(uploaded_file)
-            st.write("Data Preview:", data.head())
+    if selected == "🔮 Prediction (Linear regression)":
+        title = "Prediction"
+        subtitle = "Predict Future COVID-19 Cases"
+        content = "This section will allow you to predict future COVID-19 cases using the Linear Regression model."
+        page_layout(title, subtitle, content)
+        csv_file_path = "st.csv"
+        data_cov = load_data2(csv_file_path)
+        countries = data_cov['location'].unique()
+        selected_country = st.selectbox('Select a Country', countries)
 
-            # Ensure the correct column names are present
-            required_columns = ['new_cases', 'new_cases_smoothed', 'new_deaths', 'new_vaccinations']
-            if not all(column in data.columns for column in required_columns):
-                st.error(f"The uploaded CSV file must contain the following columns: {required_columns}")
+        if selected_country:
+            country_data = filter_country_data(data_cov, selected_country)
+            if not country_data.empty:
+                model_lr, scaler_x, scaler_y = train_linear_regression(country_data)
+
+                st.markdown("### Enter New Values for Prediction")
+                new_deaths = st.number_input('New Deaths', min_value=0)
+                new_vaccinations = st.number_input('New Vaccinations', min_value=0)
+
+                if st.button('Predict'):
+                    prediction = predict_new_cases(model_lr, scaler_x, scaler_y, new_deaths, new_vaccinations)
+                    st.write(f"Predicted New Cases: {prediction:.2f}")
             else:
-                # Create lagged dataset
-                n_lags = 14
-                dataset = series_to_supervised(data, n_in=n_lags)
+                st.write("No data available for the selected country.")
+        
 
-                try:
-                    with st.spinner('Training the Linear Regression model...'):
-                        target_col = 'new_cases(t)'
-                        X = dataset.drop(columns=[target_col])
-                        y = dataset[target_col]
-                        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                        model = LinearRegression()
-                        model.fit(X_train, y_train)
-                        y_pred = model.predict(X_test)
-
-                        mae = mean_absolute_error(y_test, y_pred)
-                        mse = mean_squared_error(y_test, y_pred)
-                        rmse = sqrt(mse)
-                        r2 = r2_score(y_test, y_pred)
-
-                        st.markdown("### Linear Regression Model Evaluation")
-                        st.write("MAE (Mean Absolute Error):", mae)
-                        st.write("MSE (Mean Squared Error):", mse)
-                        st.write("RMSE (Root Mean Squared Error):", rmse)
-                        st.write("R2 Score:", r2)
-
-                        # Plot Prediction
-                        st.markdown("### Linear Regression Model Prediction")
-                        plt.figure(figsize=(14, 8))
-                        plt.plot(y_test.values, label='Actual test')
-                        plt.plot(y_pred, label='Predicted', linestyle='--')
-                        plt.xlabel('Index')
-                        plt.ylabel('New Cases')
-                        plt.title('Linear Regression Model Prediction')
-                        plt.legend()
-                        st.pyplot()
-
-                except BrokenPipeError:
-                    st.error("The connection was lost. Please try again.")
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
+
