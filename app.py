@@ -72,7 +72,7 @@ def predict_new_cases(model_lr, scaler_x, scaler_y, new_deaths, new_vaccinations
     prediction = scaler_y.inverse_transform(scaled_prediction).flatten()[0]
     return prediction
 
-@st.cache_data
+
 def load_data(csv_file_path):
     data_cov = pd.read_csv(csv_file_path)
     data_cov.index = data_cov['date']
@@ -81,18 +81,18 @@ def load_data(csv_file_path):
     data_cov = data_cov[features]
     return data_cov
 
-@st.cache_data
+
 def load_data2(csv_file_path):
     data_cov = pd.read_csv(csv_file_path)
     return data_cov
 
 
-@st.cache_data
+
 def create_lagged_dataset(data_cov, n_lags=14):
     dataset = series_to_supervised(data_cov, n_in=n_lags)
     return dataset
 
-@st.cache_data
+
 def train_models(target_col, dataset):
     X = dataset.drop(columns=[target_col])
     Y = dataset[target_col]
