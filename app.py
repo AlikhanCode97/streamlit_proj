@@ -43,34 +43,23 @@ def corr_with_pvalues(df):
     return pval_matrix.astype(float)
 
 
+def series_to_supervised(df, n_in=1, dropnan=True):
+    n_vars = df.shape[1]
+    cols, names = list(), list()
 
-def filter_country_data(data, country):
-    country_data = data[data['location'] == country]
-    features = ['new_cases', 'new_deaths', 'new_vaccinations']
-    country_data = country_data[features].dropna()
-    return country_data
+    for i in range(n_in, 0, -1):
+        cols.append(df.shift(i))
+        names += [('%s(t-%d)' % (df.columns[j], i)) for j in range(n_vars)]
+    cols.append(df)
+    names += [('%s(t)' % (df.columns[j])) for j in range(n_vars)]
 
-def train_linear_regression(country_data):
-    X = country_data[['new_deaths', 'new_vaccinations']]
-    y = country_data['new_cases']
+    agg = pd.concat(cols, axis=1)
+    agg.columns = names
 
-    scaler_x = MinMaxScaler(feature_range=(0, 1))
-    scaler_y = MinMaxScaler(feature_range=(0, 1))
+    if dropnan:
+        agg.dropna(inplace=True)
 
-    scaled_x = scaler_x.fit_transform(X)
-    scaled_y = scaler_y.fit_transform(y.values.reshape(-1, 1))
-
-    model_lr = LinearRegression()
-    model_lr.fit(scaled_x, scaled_y)
-
-    return model_lr, scaler_x, scaler_y
-
-def predict_new_cases(model_lr, scaler_x, scaler_y, new_deaths, new_vaccinations):
-    input_data = np.array([[new_deaths, new_vaccinations]])
-    scaled_input_data = scaler_x.transform(input_data)
-    scaled_prediction = model_lr.predict(scaled_input_data)
-    prediction = scaler_y.inverse_transform(scaled_prediction).flatten()[0]
-    return prediction
+    return agg
 
 @st.cache_data
 def load_data(csv_file_path):
@@ -85,6 +74,8 @@ def load_data(csv_file_path):
 def load_data2(csv_file_path):
     data_cov = pd.read_csv(csv_file_path)
     return data_cov
+
+
 
 
 @st.cache_data
@@ -168,14 +159,17 @@ def train_models(target_col, dataset):
     estimator.model_.save('BP_saved_model.h5')
     with open('history.pickle', 'wb') as f:
         pickle.dump(history.history_, f)
+    print("Saved model and training history to disk")
 
+    # Load model and training history
     estimator.model_ = load_model('BP_saved_model.h5')
     with open('history.pickle', 'rb') as f:
         history = pickle.load(f)
+    print("Loaded model and training history from disk")
 
     res_ts = estimator.predict(X_test)
     res_test_ANN = scaler_y.inverse_transform(res_ts.reshape(-1, 1)).flatten()
-
+    y_test_inv = scaler_y.inverse_transform(y_test).flatten()
     ann_metrics = {
         'mae': mean_absolute_error(y_test_inv, res_test_ANN),
         'mse': mean_squared_error(y_test_inv, res_test_ANN),
@@ -188,20 +182,20 @@ def train_models(target_col, dataset):
     test_x_LSTM = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
 
     batch_size=int(y_train.shape[0]*.1)
-    LSTM_model = Sequential()
-    LSTM_model.add(LSTM(7, input_shape=(train_x_LSTM.shape[1], train_x_LSTM.shape[2])))
-    LSTM_model.add(Dropout(0.2))
-    LSTM_model.add(Dense(7, kernel_initializer='normal', activation='relu'))
-    LSTM_model.add(Dropout(0.2))
-    LSTM_model.add(Dense(y_train.shape[1]))
-    LSTM_model.compile(loss='mse', optimizer='adam')
+    model = Sequential()
+    model.add(LSTM(7, input_shape=(train_x_LSTM.shape[1], train_x_LSTM.shape[2])))
+    model.add(Dropout(0.2))
+    model.add(Dense(7, kernel_initializer='normal', activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(Dense(y_train.shape[1])) #activation='sigmoid'
+    model.compile(loss='mean_squared_error', optimizer='adam')
 
     fitting = True
     fitting_save = True
     epochs = 420
 
     if fitting:
-        history = LSTM_model.fit(train_x_LSTM, y_train, epochs=epochs, batch_size=batch_size, validation_data=(test_x_LSTM, y_test), verbose=1, shuffle=False)
+        history = model.fit(train_x_LSTM, y_train, epochs=epochs, batch_size=batch_size, validation_data=(test_x_LSTM, y_test), verbose=1, shuffle=False)
         if fitting_save:
             # Serialize model to JSON
             model_json = model.to_json()
@@ -209,22 +203,33 @@ def train_models(target_col, dataset):
                 json_file.write(model_json)
 
             # Save weights to HDF5
-            model.save_weights("LSTM_model.weights.h5")
+            model.save_weights("LSTM_model.weights.h5")  # Change filename here
+            print("Saved model to disk")
+
+            # Save training history
             with open('history_LSTM.pickle', 'wb') as f:
                 pickle.dump(history.history, f)
 
+    # Load model
+    from keras.models import model_from_json
     json_file = open('LSTM_model.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
 
     model = model_from_json(loaded_model_json)
-    model.load_weights("LSTM_model.weights.h5")
+
+    # Load weights into the model
+    model.load_weights("LSTM_model.weights.h5")  # Adjust filename here
+
+    # Load training history
     with open('history_LSTM.pickle', 'rb') as f:
         history = pickle.load(f)
 
-    lstm_test_predict = LSTM_model.predict(test_x_LSTM)
-    lstm_test_predict_inv = scaler_y.inverse_transform(lstm_test_predict).flatten()
+    print("Loaded model from disk")
 
+    lstm_test_predict = model.predict(test_x_LSTM)
+    lstm_test_predict_inv = scaler_y.inverse_transform(lstm_test_predict).flatten()
+    y_test_inv = scaler_y.inverse_transform(y_test).flatten()
     lstm_metrics = {
         'mae': mean_absolute_error(y_test_inv, lstm_test_predict_inv),
         'mse': mean_squared_error(y_test_inv, lstm_test_predict_inv),
@@ -248,24 +253,37 @@ def train_models(target_col, dataset):
 
     return results
 
-def series_to_supervised(df, n_in=1, dropnan=True):
-    n_vars = df.shape[1]
-    cols, names = list(), list()
 
-    for i in range(n_in, 0, -1):
-        cols.append(df.shift(i))
-        names += [('%s(t-%d)' % (df.columns[j], i)) for j in range(n_vars)]
-    cols.append(df)
-    names += [('%s(t)' % (df.columns[j])) for j in range(n_vars)]
 
-    agg = pd.concat(cols, axis=1)
-    agg.columns = names
+def filter_country_data(data, country):
+    country_data = data[data['location'] == country]
+    features = ['new_cases', 'new_deaths', 'new_vaccinations']
+    country_data = country_data[features].dropna()
+    return country_data
 
-    if dropnan:
-        agg.dropna(inplace=True)
 
-    return agg
+def train_linear_regression(country_data):
+    X = country_data[['new_deaths', 'new_vaccinations']]
+    y = country_data['new_cases']
 
+    scaler_x = MinMaxScaler(feature_range=(0, 1))
+    scaler_y = MinMaxScaler(feature_range=(0, 1))
+
+    scaled_x = scaler_x.fit_transform(X)
+    scaled_y = scaler_y.fit_transform(y.values.reshape(-1, 1))
+
+    model_lr = LinearRegression()
+    model_lr.fit(scaled_x, scaled_y)
+
+    return model_lr, scaler_x, scaler_y
+
+
+def predict_new_cases(model_lr, scaler_x, scaler_y, new_deaths, new_vaccinations):
+    input_data = np.array([[new_deaths, new_vaccinations]])
+    scaled_input_data = scaler_x.transform(input_data)
+    scaled_prediction = model_lr.predict(scaled_input_data)
+    prediction = scaler_y.inverse_transform(scaled_prediction).flatten()[0]
+    return prediction
 
 
 # Function to set the sidebar with icons
