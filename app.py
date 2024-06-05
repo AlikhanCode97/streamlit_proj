@@ -291,7 +291,7 @@ def sidebar():
     with st.sidebar:
         selected = option_menu(
             menu_title="Main Menu",
-            options=["🏡 Home", "📈 Analysis", "📊 New Cases Modelling (India)", "💀 New Deaths Modelling (India)", "🔮 Prediction (Linear regression)"],
+            options=["🏡 Home", "📈 Analysis", "📊 New Cases Modelling", "💀 New Deaths Modelling", "🔮 Prediction"],
             icons=["house", "magic", "bar-chart", "bar-chart", "bar-chart"],
             menu_icon="cast",
             default_index=0,
@@ -348,38 +348,105 @@ def main():
         title = "🏡 Home"
         subtitle = "Project Background"
         content = """
-        This project aims to predict COVID-19 cases using various machine learning models.
-        We will explore different modeling techniques such as Linear Regression, ARIMA, 
-        Auto ARIMA, Backpropagation Neural Networks (ANN), and Long Short-Term Memory (LSTM) networks.
+        <p>At the end of 2019, the COVID-19 pandemic suddenly swept across 
+        the globe without warning, affecting not only public health but also 
+        having a ripple effect on politics, economy, education, and other fields. 
+        As a result, countries worldwide sounded the highest level of alarm to jointly 
+        address what is considered the greatest crisis of modern humanity. For our data 
+        science project, our targeted audience is mainly public health officials, healthcare 
+        professionals, policymakers, and also researchers. These professionals serve as the 
+        government's strongest bulwark when facing sudden public health emergencies.</p>
+        
+        <p>As leaders responsible for protecting public health, other than conducting regular health 
+        education and also formulating good health policies to ensure the health standards of the people 
+        are met daily. A more important role played by these professionals is during the happening of 
+        crises like COVID-19. People need these experts to provide the most professional guidance to 
+        control the outbreak to save their lives and protect their families. These experts fulfilled 
+        their responsibilities by utilizing professional knowledge and experience related to formulating 
+        effective control measures, timely releasing accurate information, and coordinating various response 
+        efforts. Therefore, when the existence of technology can better realize this mission, we should adopt 
+        an attitude of actively using technology by combining the convenience of technology with their professional 
+        abilities, to achieve a synergy effect of 1+1 greater than 2.</p>
+        
+        <p>In our projects, with the data on COVID-19 cases, fatalities, vaccination coverages, and also advanced 
+        machine learning algorithms and statistical models, potential surges or declines in cases can be predicted. 
+        These results will be presented in clear, understandable formats, which is a user-friendly website. In other words, 
+        our project aims to provide powerful tools to empower the government with key insight to make informed decisions. 
+        The objectives of this project cannot be looked down upon because accurate forecasting of the pandemic's progression 
+        is essential for predicting medical resources for future demands, optimizing vaccination strategies, and also 
+        implementing effective public health measures which is meaningful because it is protecting life and maintaining 
+        the stability of society.</p>
 
         <div class="subtitle">Project Objectives</div>
-        - Predict COVID-19 cases using different models.<br>
-        - Compare the performance of these models.<br>
-        - Visualize the predictions and evaluate their accuracy.
+        <p>Data Collection and Preprocessing:</p>
+        <ul>
+            <li>Collecting COVID-19 case data is the initial step.</li>
+            <li>Clean and preprocess the data: handle missing values and outliers and ensure that the dataset does not have duplicates and all data rows are configured for analysis.</li>
+            <li>Perform exploratory data analysis (EDA) to understand the data distribution and identify any trends or patterns.</li>
+        </ul>
+
+        <p>Model Implementation:</p>
+        <ol>
+            <li>Linear Regression:
+                <ul>
+                    <li>Implement a linear regression model since there are patterns that suggest increasing values through a period, in a systematic order. Also, Linear regression is easy to maintain, and it is always good to start with.</li>
+                    <li>Evaluate its performance on training and test datasets.</li>
+                </ul>
+            </li>
+            <li>ARIMA:
+                <ul>
+                    <li>Develop an ARIMA model taking into account the order of autoregression (p), differencing (d), and moving average (q).</li>
+                    <li>We tune the parameters of ARIMA so that it always has the best fit for each dataset. However, the default ARIMA will be created, excluding any boosters.</li>
+                </ul>
+            </li>
+            <li>Artificial Neural Networks (ANN) and Long Short-Term Memory (LSTM):
+                <ul>
+                    <li>Design and train a neural network for predicting COVID-19 cases.</li>
+                    <li>We will experiment with different architectures and hyperparameters to enhance model accuracy. However, any boosters still wouldn't be applied, which means only the default model's parameters will be changed to obtain results.</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p>Model Comparison:</p>
+        <ul>
+            <li>Define evaluation metrics such as Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE), and R-squared (R²) to assess model accuracy and compare them in terms of performance.</li>
+        </ul>
         """
         page_layout(title, subtitle, content)
+
+
 
 
     if selected == "📈 Analysis":
         title = "Analysis"
         subtitle = "Correlation and P-Values Matrix"
         content = """
-        This section provides an analysis of the correlation between different COVID-19 metrics.
-        Notable correlations include new_cases, new_deaths, new_cases_smoothed, and new_deaths_smoothed.
-        The correlation involving new_vaccinations was experimental and its significance is quite low.
+        This analysis page is included to demonstrate the relationships between 
+        various data fields within our dataset. The primary focus is on identifying 
+        significant correlations between metrics such as new_cases, new_deaths, new_cases_smoothed, 
+        and new_deaths_smoothed. Additionally, we have provided p-values to indicate the statistical 
+        significance of these correlations.
         """
         st.title(title)
         st.subheader(subtitle)
         st.write(content)
+        
         csv_file_path = "st.csv"
         data_cov = load_data2(csv_file_path)
         covid_data = data_cov.copy()
-
 
         correlation_matrix = covid_data.corr(numeric_only=True)
         pval_matrix = corr_with_pvalues(covid_data)
         pval_matrix_formatted = pval_matrix.applymap(lambda x: f'{x:.4f}')
 
+        st.markdown("### Correlation Matrix and Significance")
+        content = """
+        In the correlation matrix (refer to Figure 1), we observe notable 
+        correlations between new_cases and new_deaths, as well as between new_cases
+        _smoothed and new_deaths_smoothed. These correlations suggest a strong relationship between these metrics.
+        """
+        st.write(content)
+        
         st.markdown("### Correlation Matrix Heatmap")
         plt.figure(figsize=(10, 8))
         sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
@@ -387,37 +454,78 @@ def main():
         plt.xticks(rotation=45)
         plt.yticks(rotation=45)
         st.pyplot()
-
+        
         st.markdown("### P-Values Matrix")
         st.dataframe(pval_matrix_formatted)
+        
+        content = """
+        To support these findings, we have included a p-values matrix 
+        (refer to Figure 2). For almost all data relationships, such as between new_deaths 
+        and new_cases, the p-value is less than 0.05. This indicates that the correlations are 
+        statistically significant and not due to random chance.
 
-    elif selected == "📊 New Cases Modelling (India)":
+        However, it is important to note that some metrics, such as new_tests, may show 
+        correlations with other data fields that are not statistically significant. In these cases, the p-values are higher, 
+        suggesting that any observed correlations might be coincidental and should be interpreted with caution.
+        """
+        st.write(content)
+        
+        content = """
+        ### Experimental Data and Model Selection
+        While we also examined the correlation involving new_vaccinations, the significance of 
+        this metric is quite low. As a result, we decided not to include new_vaccinations in our primary analysis.
+        """
+        st.write(content)
+        
+        content = """
+        ### Conclusion
+        Based on the analysis of the correlation matrix and p-values, we concluded that the most reliable
+        metrics for further modeling are new_cases, new_deaths, new_cases_smoothed, and new_deaths_smoothed. 
+        These metrics demonstrate strong and statistically significant correlations, making them suitable for 
+        training and modeling our dataset.
+
+        In summary, the purpose of this analysis was to identify the most relevant data fields to work with. The 
+        correlation matrix and p-values were essential in guiding our decision to focus on new_cases, new_deaths, 
+        new_cases_smoothed, and new_deaths_smoothed for our subsequent modeling efforts.
+        """
+        st.write(content)
+
+    if selected == "📊 New Cases Modelling":
         title = "New_cases models"
         subtitle = "Model Comparisons"
-
+        
+        st.title(title)
+        st.subheader(subtitle)
+        
+        # Introduction text
+        intro_text = """
+        Now that we know which fields we want to use for training, we have developed four models. Here are the results.
+        """
+        st.write(intro_text)
+        
         csv_file_path = "st.csv"
         data_cov = pd.read_csv(csv_file_path)
         
         data_cov.index = data_cov['date']
         data_cov = data_cov[data_cov['location'] == "India"]
-
+        
         features = ['new_cases', 'new_cases_smoothed','new_deaths','new_vaccinations']
         data_cov = data_cov[features]
-
+        
         # Create lagged dataset
         n_lags = 14
         dataset = series_to_supervised(data_cov, n_in=n_lags)
-
+        
         target_col = 'new_cases(t)'
         results = train_models(target_col, dataset)
-
-            # Linear Regression Model Evaluation
+        
+        # Linear Regression Model Evaluation
         st.markdown("### Linear Regression Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
         st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
         st.write("R2 Score:", results['linear_regression']['r2'])
-
+        
         # Plot Linear Regression Prediction
         st.markdown("### Linear Regression Model Prediction")
         plt.figure(figsize=(14, 8))
@@ -428,14 +536,14 @@ def main():
         plt.title('Linear Regression Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # ARIMA Model Evaluation
         st.markdown("### ARIMA Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
         st.write("MSE (Mean Squared Error):", results['arima']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
         st.write("R2 Score:", results['arima']['r2'])
-
+        
         # Plot ARIMA Prediction
         st.markdown("### ARIMA Model Prediction")
         plt.figure(figsize=(14, 8))
@@ -446,14 +554,14 @@ def main():
         plt.title('ARIMA Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # ANN Model Evaluation
         st.markdown("### ANN Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
         st.write("MSE (Mean Squared Error):", results['ann']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
         st.write("R2 Score:", results['ann']['r2'])
-
+        
         # Plot ANN Prediction
         st.markdown("### ANN Model Prediction")
         plt.figure(figsize=(14, 8))
@@ -464,14 +572,14 @@ def main():
         plt.title('ANN Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # LSTM Model Evaluation
         st.markdown("### LSTM Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
         st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
         st.write("R2 Score:", results['lstm']['r2'])
-
+        
         # Plot LSTM Prediction
         st.markdown("### LSTM Model Prediction")
         plt.figure(figsize=(14, 8))
@@ -482,106 +590,134 @@ def main():
         plt.title('LSTM Model Prediction')
         plt.legend()
         st.pyplot()
+        
+        # Conclusion text
+        conclusion_text = """
+        Linear regression showed the best results for predicting new_cases based on new deaths and new vaccinations.
+        """
+        st.write(conclusion_text)
 
 
 
-    elif selected == "💀 New Deaths Modelling (India)":
+    if selected == "💀 New Deaths Modelling":
         title = "New_deaths models"
         subtitle = "Model Comparisons"
-
+        
+        st.title(title)
+        st.subheader(subtitle)
+        
+        # Introduction text
+        intro_text = """
+        This page is an evaluation of new_deaths. We used the same parameters to train our models. Let's see the results.
+        """
+        st.write(intro_text)
+        
         csv_file_path = "st.csv"
         data_cov = pd.read_csv(csv_file_path)
         
         data_cov.index = data_cov['date']
         data_cov = data_cov[data_cov['location'] == "India"]
-
+        
         features = ['new_cases', 'new_deaths_smoothed','new_deaths']
         data_cov = data_cov[features]
-
+        
         # Create lagged dataset
         n_lags = 14
         dataset = series_to_supervised(data_cov, n_in=n_lags)
+        
         target_col = 'new_deaths(t)'
         results = train_models(target_col, dataset)
-
-            # Linear Regression Model Evaluation
+        
+        # Linear Regression Model Evaluation
         st.markdown("### Linear Regression Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['linear_regression']['mae'])
         st.write("MSE (Mean Squared Error):", results['linear_regression']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['linear_regression']['rmse'])
         st.write("R2 Score:", results['linear_regression']['r2'])
-
+        
         # Plot Linear Regression Prediction
         st.markdown("### Linear Regression Model Prediction")
         plt.figure(figsize=(14, 8))
         plt.plot(results['predictions']['actual'], label='Actual test')
         plt.plot(results['predictions']['linear'], label='Linear Model', linestyle='--')
         plt.xlabel('Date')
-        plt.ylabel('New Cases')
+        plt.ylabel('New Deaths')
         plt.title('Linear Regression Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # ARIMA Model Evaluation
         st.markdown("### ARIMA Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['arima']['mae'])
         st.write("MSE (Mean Squared Error):", results['arima']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['arima']['rmse'])
         st.write("R2 Score:", results['arima']['r2'])
-
+        
         # Plot ARIMA Prediction
         st.markdown("### ARIMA Model Prediction")
         plt.figure(figsize=(14, 8))
         plt.plot(results['predictions']['actual'], label='Actual test')
         plt.plot(results['predictions']['arima'], label='ARIMA Model', linestyle='-')
         plt.xlabel('Date')
-        plt.ylabel('New Cases')
+        plt.ylabel('New Deaths')
         plt.title('ARIMA Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # ANN Model Evaluation
         st.markdown("### ANN Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['ann']['mae'])
         st.write("MSE (Mean Squared Error):", results['ann']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['ann']['rmse'])
         st.write("R2 Score:", results['ann']['r2'])
-
+        
         # Plot ANN Prediction
         st.markdown("### ANN Model Prediction")
         plt.figure(figsize=(14, 8))
         plt.plot(results['predictions']['actual'], label='Actual test')
         plt.plot(results['predictions']['ann'], label='ANN Model', linestyle='-.')
         plt.xlabel('Date')
-        plt.ylabel('New Cases')
+        plt.ylabel('New Deaths')
         plt.title('ANN Model Prediction')
         plt.legend()
         st.pyplot()
-
+        
         # LSTM Model Evaluation
         st.markdown("### LSTM Model Evaluation")
         st.write("MAE (Mean Absolute Error):", results['lstm']['mae'])
         st.write("MSE (Mean Squared Error):", results['lstm']['mse'])
         st.write("RMSE (Root Mean Squared Error):", results['lstm']['rmse'])
         st.write("R2 Score:", results['lstm']['r2'])
-
+        
         # Plot LSTM Prediction
         st.markdown("### LSTM Model Prediction")
         plt.figure(figsize=(14, 8))
         plt.plot(results['predictions']['actual'], label='Actual test')
         plt.plot(results['predictions']['lstm'], label='LSTM Model', linestyle=':')
         plt.xlabel('Date')
-        plt.ylabel('New Cases')
+        plt.ylabel('New Deaths')
         plt.title('LSTM Model Prediction')
         plt.legend()
         st.pyplot()
+        
+        # Conclusion text
+        conclusion_text = """
+        Most of the models performed poorly except for the linear regression model. This poor performance is most likely due to the noise created by new_vaccinations. Even though linear regression showed some promising results, we decided to reject the idea of predicting new_deaths for this project. The other models showed significantly worse performance, which might indicate that our dataset has a lot of zero values, possibly introduced during data cleaning.
+        """
+        st.write(conclusion_text)
 
 
 
-    if selected == "🔮 Prediction (Linear regression)":
+    if selected == "🔮 Prediction":
         title = "Prediction"
         subtitle = "Predict Future COVID-19 Cases"
-        content = "This section will allow you to predict future COVID-19 cases using the Linear Regression model."
+        content = """
+        This section will allow you to predict future COVID-19 cases using the Linear Regression model.
+
+        Due to the results of our previous analysis, we decided to use linear regression as the predictive tool for our COVID-19 project. 
+        As noted earlier, we decided not to predict new_deaths due to the poor performance of models. However, predicting new_cases showed 
+        promising results. Therefore, this model will be predicting new_cases based on new_vaccinations and new_deaths.
+        """
         page_layout(title, subtitle, content)
         csv_file_path = "st.csv"
         data_cov = load_data2(csv_file_path)
@@ -600,8 +736,25 @@ def main():
                 if st.button('Predict'):
                     prediction = predict_new_cases(model_lr, scaler_x, scaler_y, new_deaths, new_vaccinations)
                     st.write(f"Predicted New Cases: {prediction:.2f}")
+                    
+                st.markdown(f"### Distribution of New Deaths to New Cases in {selected_country}")
+                plt.figure(figsize=(10, 6))
+                plt.scatter(country_data['new_cases'], country_data['new_deaths'], alpha=0.7)
+                plt.xlabel('New Cases')
+                plt.ylabel('New Deaths')
+                plt.title('Distribution of New Deaths to New Cases')
+                plt.grid(True)
+                st.pyplot()
+                
+                st.write("""
+                This graph shows the distribution in the dataset of new_deaths to new_cases. 
+                It helps verify that the model performs correctly by providing a visual representation of the relationship between these variables.
+                """)
             else:
                 st.write("No data available for the selected country.")
+
+
+
         
 
 if __name__ == '__main__':
